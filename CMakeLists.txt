@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 option(USE_CUDA "CUDA/GPU project" ON)
 option(USE_ISOALLOC "Isoalloc/GPU project" ON)
 
+message("System = ${CMAKE_SYSTEM_NAME}, UNIX = ${UNIX}")
+
 if (USE_CUDA)
     project(Thetis LANGUAGES CXX CUDA C)
 else(USE_CUDA)
@@ -9,10 +11,68 @@ else(USE_CUDA)
 endif(USE_CUDA)
 
 find_package(OpenMP REQUIRED)
+if(OPENMP_FOUND)
+ message("using openmp")
+ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+endif()
+
 set(CMAKE_CXX_STANDARD 17)
+
 add_subdirectory(external/spdlog)
+include_directories(external/picojson-master) # 'dom' json
+include_directories("$ENV{HOME}/libs/include")
+link_directories("$ENV{HOME}/libs/lib")
 
 add_library(Thetis SHARED Matrix.cpp)
+if(USE_CUDA)
+    add_library(ThetisGPU SHARED Matrix.cpp Matrix.cu)
+    set_target_properties(ThetisGPU PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+endif(USD_CUDA)
+
 add_executable(TestThetis TestThetis.cpp TestMatrix.cpp doctest/parts/doctest.cpp)
 
-target_link_libraries(TestThetis PUBLIC Thetis spdlog)
+if(USE_CUDA)
+    add_executable(TestThetisGPU TestThetis.cpp TestMatrix.cpp TestMatrix.cu doctest/parts/doctest.cpp)
+    set_target_properties(TestThetisGPU PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+endif(USE_CUDA)
+
+if (UNIX)
+    message("Linux/Unix build!")
+
+    message("max error level")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -fPIC")
+    if (USE_CUDA)
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -arch=sm_61 -Xcompiler -fPIC")
+    endif(USE_CUDA)
+
+endif(UNIX)
+
+if (CMAKE_BUILD_TYPE STREQUAL "")
+    message("CMAKE_BUILD_TYPE = '' => -g -O0 -D_DEBUG=1")
+
+    target_compile_options(TestThetisGPU PUBLIC "-g" "-O0" "-D_DEBUG=1" )
+    target_compile_options(ThetisGPU PUBLIC "-g" "-O0" "-D_DEBUG=1" )
+    target_compile_options(TestThetis PUBLIC "-g" "-rdynamic" "-O0" "-D_DEBUG=1" "-fsanitize=address" "-fsanitize=leak" "-DTHETIS_CPU_ONLY=1")
+    target_compile_options(Thetis PUBLIC "-g" "-rdynamic" "-O0" "-D_DEBUG=1" "-fsanitize=address" "-fsanitize=leak" "-DTHETIS_CPU_ONLY=1")
+
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -rdynamic -O0 -D_DEBUG=1")
+    message(" please use -DCMAKE_BUILD_TYPE=Release or -DCMAKE_BUILD_TYPE=Debug if needed ")
+else(CMAKE_BUILD_TYPE STREQUAL "")
+    message("CMAKE_BUILD_TYPE defined as *" ${CMAKE_BUILD_TYPE} "*")
+endif(CMAKE_BUILD_TYPE STREQUAL "")
+
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    message("RELEASE COMPILE FLAGS ON: OPTIMIZE FOR SPEED WITH NATIVE(?) ARCH")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -rdynamic -O2")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -rdynamic -O2")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -g -rdynamic -O2")
+endif(CMAKE_BUILD_TYPE STREQUAL "Release")
+
+target_link_libraries(TestThetis PUBLIC Thetis spdlog ${OpenMP_CXX_LIBRARIES})
+
+if(USE_CUDA)
+    target_link_libraries(TestThetisGPU PUBLIC ThetisGPU spdlog ${OpenMP_CXX_LIBRARIES} -lcudart)
+endif(USE_CUDA)
