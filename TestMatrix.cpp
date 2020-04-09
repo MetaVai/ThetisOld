@@ -27,3 +27,17 @@ TEST_THETIS(TestMatrix04) {
         spdlog::debug("thread #{}", thr);
     }
 }
+
+
+TEST_THETIS(TestMatrix05) {
+    spdlog::debug("test matrix 05 {}", 12345);
+    auto *data = new int[45];
+    int acc = 0;
+    for(int i=0; i<46000; ++i) {
+        //data[i] = i+4;
+        acc +=data[i];
+    }
+    std::cerr << acc << std::endl;
+     delete[](data);
+    delete[](data); // caught
+}

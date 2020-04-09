@@ -1,0 +1,27 @@
+# ignore all files, so that we can ignore executables created by build systems
+*
+
+# don't ignore directories, so we can recurse into them
+!*/
+
+# don't ignore files that have an extension
+!*.*
+
+# ignore intermediate files introduced by build systems
+*.o
+*.out
+
+# don't ignore scons makefiles
+!**/SConstruct
+!**/SConscript
+
+# ignore files introduced by scons
+.sconsign.dblite
+*.pyc
+
+# ignore files introduced by doxygen
+*.log
+
+# ignore files produced by compiler diagnostics (typically named errors.txt)
+*.txt
+

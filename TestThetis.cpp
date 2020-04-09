@@ -1,6 +1,22 @@
 #include <omp.h>
 #include "ThetisTest.h"
 
+#define CPP_SUPPORT 1
+#include "external/isoalloc/include/iso_alloc.h"
+
+#if defined(THETIS_USE_ISO_ALLOC) && defined(_DEBUG) && !defined(THETIS_CPU_ONLY)
+void* operator new (std::size_t size) throw (/*std::bad_alloc*/) {
+    return iso_alloc(size);
+}
+
+void operator delete(void* x) throw() {   
+    iso_free(x);
+    iso_verify_zones();
+    int32_t r = iso_alloc_detect_leaks();
+    if (r > 0) std::cerr << "[[FATAL]]" << r << " leaks " << std::endl << std::flush;
+}
+#endif
+
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 
 #ifdef DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
