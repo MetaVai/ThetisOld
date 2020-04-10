@@ -67,5 +67,6 @@
         "string": "cpp",
         "variant": "cpp"
     },
-    "git.ignoreLimitWarning": true
+    "git.ignoreLimitWarning": true,
+    "C_Cpp.default.configurationProvider": "go2sh.cmake-integration"
 }

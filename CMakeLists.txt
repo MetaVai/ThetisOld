@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 option(USE_CUDA "CUDA/GPU project" ON)
-option(USE_ISOALLOC "Isoalloc/GPU project" ON)
+option(USE_ISOALLOC "Isoalloc/GPU project" OFF) # if OFF, use thetis_alloc ~~~
 
 message("System = ${CMAKE_SYSTEM_NAME}, UNIX = ${UNIX}")
 

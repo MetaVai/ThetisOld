@@ -1,11 +1,11 @@
 #include <omp.h>
 #include "TestMatrix.h"
 
+#ifdef BOOM
 TEST_THETIS(TestMatrix01) {
     std::cout << "TestMatrix0101" << std::endl << std::flush;
     throw std::logic_error("bad bad");
 }
-
 
 TEST_THETIS(TestMatrix02) {
     spdlog::debug("test matrix 02 {}", 12345);
@@ -14,8 +14,9 @@ TEST_THETIS(TestMatrix02) {
 
 TEST_THETIS(TestMatrix03) {
     spdlog::debug("test matrix 03 {}", 12345);
-    THETIS_ASSERT(1==2);
+    ThetisAssert(1==2);
 }
+#endif 
 
 TEST_THETIS(TestMatrix04) {
     spdlog::debug("test matrix 04 {}", 12345);
@@ -28,16 +29,28 @@ TEST_THETIS(TestMatrix04) {
     }
 }
 
-
+#ifdef BOOM
 TEST_THETIS(TestMatrix05) {
     spdlog::debug("test matrix 05 {}", 12345);
     auto *data = new int[45];
     int acc = 0;
-    for(int i=0; i<46000; ++i) {
-        //data[i] = i+4;
-        acc +=data[i];
+    for(int i=0; i<46; ++i) {
+        acc += thetis_check_canary(data[i]); // caught by address sanitizer & thetis_alloc
     }
     std::cerr << acc << std::endl;
-     delete[](data);
-    delete[](data); // caught
+    delete[](data);
+    //delete[](data); // caught/iso alloc
 }
+
+TEST_THETIS(TestMatrix06) {
+    spdlog::debug("test matrix 05 {}", 12345);
+    auto *data = new int[45];
+    int acc = 0;
+    for(int i=0; i<46; ++i) {
+        data[i] = i+4;
+    }
+    std::cerr << acc << std::endl;
+    delete[](data);
+    //delete[](data); // caught/iso alloc
+}
+#endif

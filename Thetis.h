@@ -3,6 +3,7 @@
 #include <vector>
 #include <map>
 #include <tuple>
+#include <cassert>
 
 // failure with CUDA compilter
 #ifndef __CUDACC__
@@ -29,7 +30,34 @@ namespace thetis {
 
 }
 
-#define THETIS_ASSERT(X) if (!(X)) { \
+#define ThetisAssert(X) if (!(X)) { \
     thetis::error(__FILE__, __LINE__, "assert failed {}", #X); \
 }
 
+#define ThetisUse(x) (void) x
+#define THETIS_MEM_MAGIC 0xab
+
+namespace thetis {
+#ifdef _DEBUG 
+    template<typename T>
+    inline T _check_canary(const T &x, const char * file, int line) {
+        const unsigned char *b = reinterpret_cast<const unsigned char *>(&x);
+        for (unsigned i=0; i< sizeof(T); ++i) {
+            if (b[i] == THETIS_MEM_MAGIC) {
+                thetis::error(file, line, "[check canary] assert failed ");
+            }
+        }
+        return x;
+    }
+#define thetis_check_canary(x) thetis::_check_canary((x), __FILE__, __LINE__)
+
+    bool _thetis_check_data(void *v);
+    inline bool check_data(const void * v) {
+        return _thetis_check_data(const_cast<void *>(v));
+    }
+#else
+#define thetis_check_canary(X) (X)
+
+    inline bool check_data(const void * v) { return true; }
+#endif
+}
