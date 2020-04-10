@@ -21,7 +21,7 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 
 add_subdirectory(external/spdlog)
-include_directories(external/picojson-master) # 'dom' json
+include_directories(external/picojson) # 'dom' json
 include_directories("$ENV{HOME}/libs/include")
 link_directories("$ENV{HOME}/libs/lib")
 
@@ -58,41 +58,38 @@ if (UNIX)
         set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -arch=sm_61 -Xcompiler -fPIC")
     endif(USE_CUDA)
 
-#TODO put more things into here
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+        message("CMAKE_BUILD_TYPE = '' => -g -O0 -D_DEBUG=1")
 
+        target_compile_options(TestThetisGPU PUBLIC "-g" "-O0" "-D_DEBUG=1" )
+        target_compile_options(ThetisGPU PUBLIC "-g" "-O0" "-D_DEBUG=1" )
+        target_compile_options(TestThetis PUBLIC "-g" "-rdynamic" "-O0" "-D_DEBUG=1" "-fsanitize=address" "-fsanitize=leak" "-DTHETIS_CPU_ONLY=1")
+        target_compile_options(Thetis PUBLIC "-g" "-rdynamic" "-O0" "-D_DEBUG=1" "-fsanitize=address" "-fsanitize=leak" "-DTHETIS_CPU_ONLY=1")
+
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -rdynamic -O0 -D_DEBUG=1")
+        message(" please use -DCMAKE_BUILD_TYPE=Release or -DCMAKE_BUILD_TYPE=Debug if needed ")
+    else(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        message("CMAKE_BUILD_TYPE defined as *" ${CMAKE_BUILD_TYPE} "*")
+    endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+        message("RELEASE COMPILE FLAGS ON: OPTIMIZE FOR SPEED WITH NATIVE(?) ARCH")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -rdynamic -O2")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -rdynamic -O2")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -g -rdynamic -O2")
+    endif(CMAKE_BUILD_TYPE STREQUAL "Release")
+
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+        target_link_libraries(TestThetis PUBLIC Thetis spdlog ${OpenMP_CXX_LIBRARIES})
+    else (CMAKE_BUILD_TYPE STREQUAL "Release")
+        target_link_libraries(TestThetis PUBLIC Thetis spdlog ${OpenMP_CXX_LIBRARIES} "-fsanitize=address" "-fsanitize=leak")
+    endif (CMAKE_BUILD_TYPE STREQUAL "Release")
+
+    if(USE_CUDA)
+        if(USE_ISOALLOC)
+            target_link_libraries(TestThetisGPU PUBLIC ThetisGPU spdlog isoalloc ${OpenMP_CXX_LIBRARIES} -lcudart)    
+        else(USE_ISOALLOC)
+            target_link_libraries(TestThetisGPU PUBLIC ThetisGPU spdlog ${OpenMP_CXX_LIBRARIES} -lcudart)
+        endif(USE_ISOALLOC)
+    endif(USE_CUDA)
 endif(UNIX)
-
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    message("CMAKE_BUILD_TYPE = '' => -g -O0 -D_DEBUG=1")
-
-    target_compile_options(TestThetisGPU PUBLIC "-g" "-O0" "-D_DEBUG=1" )
-    target_compile_options(ThetisGPU PUBLIC "-g" "-O0" "-D_DEBUG=1" )
-    target_compile_options(TestThetis PUBLIC "-g" "-rdynamic" "-O0" "-D_DEBUG=1" "-fsanitize=address" "-fsanitize=leak" "-DTHETIS_CPU_ONLY=1")
-    target_compile_options(Thetis PUBLIC "-g" "-rdynamic" "-O0" "-D_DEBUG=1" "-fsanitize=address" "-fsanitize=leak" "-DTHETIS_CPU_ONLY=1")
-
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -rdynamic -O0 -D_DEBUG=1")
-    message(" please use -DCMAKE_BUILD_TYPE=Release or -DCMAKE_BUILD_TYPE=Debug if needed ")
-else(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    message("CMAKE_BUILD_TYPE defined as *" ${CMAKE_BUILD_TYPE} "*")
-endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
-
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
-    message("RELEASE COMPILE FLAGS ON: OPTIMIZE FOR SPEED WITH NATIVE(?) ARCH")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -rdynamic -O2")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -rdynamic -O2")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -g -rdynamic -O2")
-endif(CMAKE_BUILD_TYPE STREQUAL "Release")
-
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_link_libraries(TestThetis PUBLIC Thetis spdlog ${OpenMP_CXX_LIBRARIES})
-else (CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_link_libraries(TestThetis PUBLIC Thetis spdlog ${OpenMP_CXX_LIBRARIES} "-fsanitize=address" "-fsanitize=leak")
-endif (CMAKE_BUILD_TYPE STREQUAL "Release")
-
-if(USE_CUDA)
-    if(USE_ISOALLOC)
-        target_link_libraries(TestThetisGPU PUBLIC ThetisGPU spdlog isoalloc ${OpenMP_CXX_LIBRARIES} -lcudart)    
-    else(USE_ISOALLOC)
-        target_link_libraries(TestThetisGPU PUBLIC ThetisGPU spdlog ${OpenMP_CXX_LIBRARIES} -lcudart)
-    endif(USE_ISOALLOC)
-endif(USE_CUDA)
