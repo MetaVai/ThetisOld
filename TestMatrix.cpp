@@ -54,3 +54,13 @@ TEST_THETIS(TestMatrix06) {
     //delete[](data); // caught/iso alloc
 }
 #endif
+
+TEST_THETIS_PARALLEL(TestMatrix07) {
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+    // ThetisAssert(1==2);
+}
+
+TEST_THETIS_PARALLEL(TestMatrix08) {
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+    ThetisAssert(1==1);
+}

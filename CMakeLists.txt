@@ -41,10 +41,10 @@ if(USE_CUDA)
     set_target_properties(ThetisGPU PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 endif(USE_CUDA)
 
-add_executable(TestThetis TestThetis.cpp TestMatrix.cpp doctest/parts/doctest.cpp)
+add_executable(TestThetis TestThetis.cpp TestMatrix.cpp TestUtils.cpp doctest/parts/doctest.cpp)
 
 if(USE_CUDA)
-    add_executable(TestThetisGPU TestThetis.cpp TestThetis.cu TestMatrix.cpp TestMatrix.cu doctest/parts/doctest.cpp)
+    add_executable(TestThetisGPU TestThetis.cpp TestThetis.cu TestMatrix.cpp TestMatrix.cu TestUtils.cpp doctest/parts/doctest.cpp)
     set_target_properties(TestThetisGPU PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 endif(USE_CUDA)
 

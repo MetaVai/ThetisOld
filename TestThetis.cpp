@@ -3,6 +3,7 @@
 
 #define CPP_SUPPORT 1
 #include "external/isoalloc/include/iso_alloc.h"
+#include "external/ThreadPool/ThreadPool.h"
 
 namespace thetis {
     /** When using the malloc wrapper, convert wrapped chunk size to actual size */
@@ -122,6 +123,10 @@ int main(int argc, char** argv) {
     spdlog::debug(" num threads = {}, max threads = {}", omp_get_num_threads(), omp_get_max_threads());
 
     auto rv = doctest::Context(argc, argv).run(); 
+
+    spdlog::debug("waiting for parallel tests");
+    ThetisAssert(thetis::check_tests());
+    spdlog::debug("parallel tests 'probably' passed");
     spdlog::shutdown();
     return rv;
 }
@@ -135,3 +140,31 @@ TEST_CASE("main") { std::cout << "hello from <main>" << std::endl << std::flush;
 //int main(int argc, const char* argv[]) {
 //    return 0;
 //}
+
+namespace {
+    thread_pool::ThreadPool pool(omp_get_max_threads());
+    std::vector< std::future<bool> > results;
+    std::vector< std::string > names;  
+}
+
+namespace thetis {
+    void start_test(const std::string &name, std::function<bool()> f) {
+        results.emplace_back(pool.enqueue(f));
+        names.emplace_back(name);
+    }
+
+    bool check_tests() {
+        bool status = true;
+        for (unsigned i=0; i<results.size(); ++i) {
+            if (!results[i].get()) {
+                status = false;
+                spdlog::error("// test failed: {}", names[i]);
+            } else {
+                spdlog::debug("// test success: {}", names[i]);
+            }
+        }
+
+        ThetisAssert(status);
+        return status;
+    }
+}

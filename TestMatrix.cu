@@ -32,3 +32,13 @@ TEST_THETIS(TestMatrixCuda06) {
    //delete[](data); // caught/iso alloc
 }
 #endif
+
+TEST_THETIS_PARALLEL(TestMatrixCuda07) {
+   auto *data = new int[45];
+   int acc = 0;
+   for(int i=0; i< 45 /*46*/; ++i) { // Confirmed BOOM is 46
+       data[i] = i+4;
+   }
+   std::cerr << acc << std::endl;
+   delete[](data);   
+}
