@@ -21,7 +21,10 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 
 add_subdirectory(external/spdlog)
+include_directories(external/spdlog/include)
 include_directories(external/picojson) # 'dom' json
+include_directories(external/agency)
+include_directories(/usr/local/cuda/include)
 include_directories("$ENV{HOME}/libs/include")
 link_directories("$ENV{HOME}/libs/lib")
 
@@ -44,7 +47,7 @@ endif(USE_CUDA)
 add_executable(TestThetis TestThetis.cpp TestMatrix.cpp TestUtils.cpp doctest/parts/doctest.cpp)
 
 if(USE_CUDA)
-    add_executable(TestThetisGPU TestThetis.cpp TestThetis.cu TestMatrix.cpp TestMatrix.cu TestUtils.cpp doctest/parts/doctest.cpp)
+    add_executable(TestThetisGPU TestThetis.cpp TestThetis.cu TestMatrix.cpp TestMatrix.cu TestUtils.cpp TestAgency.cu doctest/parts/doctest.cpp)
     set_target_properties(TestThetisGPU PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 endif(USE_CUDA)
 
@@ -55,7 +58,8 @@ if (UNIX)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror -fPIC")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Werror -fPIC")
     if (USE_CUDA)
-        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -arch=sm_61 -Xcompiler -fPIC")
+        include_directories(/usr/local/cuda/include)
+        set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -arch=sm_61 --expt-extended-lambda -Xcompiler -fPIC")
     endif(USE_CUDA)
 
     if (CMAKE_BUILD_TYPE STREQUAL "Debug")

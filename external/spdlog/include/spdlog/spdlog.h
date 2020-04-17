@@ -1,11 +1,12 @@
+#pragma once
 // Copyright(c) 2015-present, Gabi Melman & spdlog contributors.
 // Distributed under the MIT License (http://opensource.org/licenses/MIT)
 
 // spdlog main header file.
 // see example.cpp for usage example
 
-#ifndef SPDLOG_H
-#define SPDLOG_H
+//#ifndef SPDLOG_H
+//#define SPDLOG_H
 
 #pragma once
 
@@ -339,4 +340,4 @@ inline void critical(wstring_view_t fmt, const Args &... args)
 #include "spdlog-inl.h"
 #endif
 
-#endif // SPDLOG_H
+//#endif // SPDLOG_H
