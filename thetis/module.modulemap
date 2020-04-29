@@ -1,0 +1,4 @@
+
+module ThetisMatrix {
+    header "matrix.h"
+}

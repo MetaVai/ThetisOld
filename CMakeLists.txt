@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 option(USE_CUDA "CUDA/GPU project" ON)
 option(USE_ISOALLOC "Isoalloc/GPU project" OFF) # if OFF, use thetis_alloc ~~~
+option(USE_JULIA "Julia script support" ON)
 
 message("System = ${CMAKE_SYSTEM_NAME}, UNIX = ${UNIX}")
 
@@ -9,6 +10,12 @@ if (USE_CUDA)
 else(USE_CUDA)
     project(Thetis LANGUAGES CXX C)
 endif(USE_CUDA)
+
+if (USE_JULIA)
+  #cf. https://github.com/barche/embedding-julia 
+  set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
+  find_package(Julia REQUIRED)
+endif(USE_JULIA)
 
 find_package(OpenMP REQUIRED)
 if(OPENMP_FOUND)
@@ -44,15 +51,27 @@ if(USE_CUDA)
     set_target_properties(ThetisGPU PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 endif(USE_CUDA)
 
-add_executable(TestThetis TestThetis.cpp TestMatrix.cpp TestUtils.cpp doctest/parts/doctest.cpp)
+add_executable(TestThetis TestThetis.cpp TestMatrix.cpp TestUtils.cpp TestJulia.cpp doctest/parts/doctest.cpp)
 
 if(USE_CUDA)
-    add_executable(TestThetisGPU TestThetis.cpp TestThetis.cu TestMatrix.cpp TestMatrix.cu TestUtils.cpp TestAgency.cu doctest/parts/doctest.cpp)
+    add_executable(TestThetisGPU TestThetis.cpp TestThetis.cu TestMatrix.cpp TestMatrix.cu TestUtils.cpp TestAgency.cu TestJulia.cpp doctest/parts/doctest.cpp)
     set_target_properties(TestThetisGPU PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 endif(USE_CUDA)
 
 if (UNIX)
     message("Linux/Unix build!")
+
+    if(USE_JULIA)
+        target_include_directories(TestThetis PUBLIC
+            "$<BUILD_INTERFACE:${Julia_INCLUDE_DIRS}>"
+        )
+        target_include_directories(TestThetisGPU PUBLIC
+        "$<BUILD_INTERFACE:${Julia_INCLUDE_DIRS}>"
+        )
+        add_definitions(-DJULIA_ENABLE_THREADING -DENABLE_JULIA)
+    else(USE_JULIA)
+
+    endif(USE_JULIA)
 
     message("max error level")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Werror -fPIC")
@@ -84,16 +103,16 @@ if (UNIX)
     endif(CMAKE_BUILD_TYPE STREQUAL "Release")
 
     if (CMAKE_BUILD_TYPE STREQUAL "Release")
-        target_link_libraries(TestThetis PUBLIC Thetis spdlog ${OpenMP_CXX_LIBRARIES})
+        target_link_libraries(TestThetis PUBLIC Thetis spdlog $<BUILD_INTERFACE:${Julia_LIBRARY}> ${OpenMP_CXX_LIBRARIES})
     else (CMAKE_BUILD_TYPE STREQUAL "Release")
-        target_link_libraries(TestThetis PUBLIC Thetis spdlog ${OpenMP_CXX_LIBRARIES} "-fsanitize=address" "-fsanitize=leak")
+        target_link_libraries(TestThetis PUBLIC Thetis spdlog $<BUILD_INTERFACE:${Julia_LIBRARY}> ${OpenMP_CXX_LIBRARIES} "-fsanitize=address" "-fsanitize=leak")
     endif (CMAKE_BUILD_TYPE STREQUAL "Release")
 
     if(USE_CUDA)
         if(USE_ISOALLOC)
-            target_link_libraries(TestThetisGPU PUBLIC ThetisGPU spdlog isoalloc ${OpenMP_CXX_LIBRARIES} -lcudart)    
+            target_link_libraries(TestThetisGPU PUBLIC ThetisGPU spdlog isoalloc $<BUILD_INTERFACE:${Julia_LIBRARY}> ${OpenMP_CXX_LIBRARIES} -lcudart)    
         else(USE_ISOALLOC)
-            target_link_libraries(TestThetisGPU PUBLIC ThetisGPU spdlog ${OpenMP_CXX_LIBRARIES} -lcudart)
+            target_link_libraries(TestThetisGPU PUBLIC ThetisGPU spdlog $<BUILD_INTERFACE:${Julia_LIBRARY}> ${OpenMP_CXX_LIBRARIES} -lcudart)
         endif(USE_ISOALLOC)
     endif(USE_CUDA)
 endif(UNIX)
