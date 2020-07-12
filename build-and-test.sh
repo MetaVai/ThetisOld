@@ -10,3 +10,5 @@ make -j6 || exit 1
 ./TestThetis || exit 1
 popd
 zip thetis.zip build_release/libThetis.so build_release/TestThetis testData licenses LICENSE
+echo pwd is $PWD
+ls -lh *.zip
