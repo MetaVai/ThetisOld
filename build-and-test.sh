@@ -12,3 +12,5 @@ popd
 zip thetis.zip build_release/libThetis.so build_release/TestThetis testData licenses LICENSE
 echo pwd is $PWD
 ls -lh *.zip
+echo ls -lh /home/runner/work/Thetis/Thetis/thetis.zip
+ls -lh /home/runner/work/Thetis/Thetis/thetis.zip
