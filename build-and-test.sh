@@ -1,3 +1,4 @@
+#!/bin/bash
 
 rm -Rvf build
 rm -Rvf build_release
